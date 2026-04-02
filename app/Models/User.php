@@ -20,6 +20,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'address',
+        'city',
+        'role',
+        'points',
+        'is_verified',
+        'is_banned'
     ];
 
     /**
@@ -43,5 +49,20 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function deposits()
+    {
+        return $this->hasMany(Deposit::class, 'citizen_id');
+    }
+
+    public function collectedDeposits()
+    {
+        return $this->hasMany(Deposit::class, 'agent_id');
+    }
+
+    public function pointTransactions()
+    {
+        return $this->hasMany(PointTransaction::class);
     }
 }
