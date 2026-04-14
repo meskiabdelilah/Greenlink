@@ -9,7 +9,6 @@ class PointTransaction extends Model
     protected $fillable = [
         'user_id',
         'deposit_id',
-        'description',
         'points',
         'type'
     ];

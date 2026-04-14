@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('waste_categories', function(Blueprint $table)
-        {
+        Schema::create('waste_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->decimal('point_par_kg',8,2);
-            $table->decimal('co2_saved_par_kg',8,2);
+            $table->string('name')->unique();
+            $table->text('description')->nullable();
+            $table->decimal('points_per_kg', 8, 2);
+            $table->decimal('co2_saved_per_kg', 8, 2);
+            $table->timestamps();
         });
     }
 
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('deposits');
+        Schema::dropIfExists('waste_categories');
     }
 };

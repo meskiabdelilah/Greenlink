@@ -7,14 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class WasteCategory extends Model
 {
     protected $fillable = [
-        'title',
+        'name',
         'description',
-        'points_required',
-        'stock'
+        'points_per_kg',
+        'co2_saved_per_kg',
     ];
 
-    public function redemptions()
+    public function deposits()
     {
-        return $this->hasMany(VoucherRedemption::class);
+        return $this->hasMany(Deposit::class, 'category_id');
     }
 }

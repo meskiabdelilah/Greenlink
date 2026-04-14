@@ -10,6 +10,8 @@ class Deposit extends Model
         'citizen_id',
         'agent_id',
         'category_id',
+        'address',
+        'city',
         'estimated_weight',
         'actual_weight',
         'photo_path',
