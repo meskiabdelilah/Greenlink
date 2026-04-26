@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('voucher_id')->constrained('vouchers')->cascadeOnDelete();
-            $table->integer('points_spent');
+            $table->decimal('points_spent', 10, 2);
             $table->enum('status', ['pending', 'completed', 'cancelled'])->default('pending');
             $table->timestamp('redeemed_at')->nullable();
             $table->timestamps();
