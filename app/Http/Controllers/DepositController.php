@@ -2,81 +2,135 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Deposit;
+use App\Models\WasteCategory;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Storage;
 
 class DepositController extends Controller
 {
-
-    // Post /api/deposits
-    // Store a new deposit request from citizen.
-    public function store(Request $request)
-    {
-        // Check if user is banned .
-        if ($request->user()->is_banned) {
-            return response()->json([
-                'message' => 'Your account is banned'
-            ], 403);
-        }
-        // 1. Validation
-        $fields = $request->validate([
-            'category_id' => 'required|exists:waste_categories,id',
-            'estimated_weight' => 'required|numeric|min:0',
-            'photo_path' => 'nullable|string',
-            'address' => 'required|string',
-            'city' => 'required|string',
-        ]);
-
-        // 2. Create deposit
-        $deposit = Deposit::create([
-            'citizen_id' => $request->user()->id,
-            'category_id' => $fields['category_id'],
-            'estimated_weight' => $fields['estimated_weight'],
-            'photo_path' => $fields['photo_path'] ?? null,
-            'address' => $fields['address'],
-            'city' => $fields['city'],
-            'status' => 'pending'
-        ]);
-
-        // 3. Response
-        return response()->json([
-            'message' => 'Deposit created successfully',
-            'data' => $deposit
-        ], 201);
-    }
-
-
-    // Get /api/deposits
-    // My deposits .
-    public function myDeposits(Request $request)
+    // list deposits (user)
+    public function index(Request $request)
     {
         $deposits = Deposit::where('citizen_id', $request->user()->id)
-            ->with('category') // category info
+            ->with('category')
             ->latest()
             ->get();
 
-        return response()->json([
-            'message' => 'My deposits fetched successfully',
-            'data' => $deposits,
-        ]);
+        return view('citizen.deposits.index', compact('deposits'));
     }
 
+    // show create form
+    public function create()
+    {
+        $categories = WasteCategory::all();
+        return view('citizen.deposits.create', compact('categories'));
+    }
 
-    // Get /api/deposits/{id}
-    // Show specific deposit details .
+    // store deposit
+    public function store(Request $request)
+    {
+        $request->validate([
+            'category_id' => 'required|exists:waste_categories,id',
+            'estimated_weight' => 'required|numeric|min:0.1',
+            'address' => 'required|string|min:10',
+            'city' => 'required|string|max:255',
+            'photo' => 'nullable|image|max:2048',
+        ]);
+
+        $photoPath = $request->hasFile('photo')
+            ? $request->file('photo')->store('deposits', 'public')
+            : null;
+
+        Deposit::create([
+            'citizen_id' => $request->user()->id,
+            'category_id' => $request->category_id,
+            'estimated_weight' => $request->estimated_weight,
+            'address' => $request->address,
+            'city' => $request->city,
+            'photo_path' => $photoPath,
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('citizen.deposits.index')
+            ->with('success', 'Dépôt créé avec succès');
+    }
+
+    // show one deposit
     public function show(Deposit $deposit, Request $request)
     {
         if ($deposit->citizen_id !== $request->user()->id) {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
+            return back()->with('error', 'Action non autorisée');
         }
 
         $deposit->load('category');
 
-        return response()->json([
-            'message' => 'Deposit fetched successfully',
-            'data' => $deposit,
+        return view('citizen.deposits.show', compact('deposit'));
+    }
+
+    // edit deposit
+    public function edit(Deposit $deposit, Request $request)
+    {
+        if ($deposit->citizen_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        if (strtolower($deposit->status) !== 'pending') {
+            return back()->with('error', 'Vous pouvez seulement modifier les dépôts en attente.');
+        }
+
+        $categories = WasteCategory::all();
+
+        return view('citizen.deposits.edit', compact('deposit', 'categories'));
+    }
+
+    // update deposit
+    public function update(Request $request, Deposit $deposit)
+    {
+        if ($deposit->citizen_id !== $request->user()->id) {
+            abort(403);
+        }
+
+
+        if (strtolower($deposit->status) !== 'pending') {
+            return redirect()->route('citizen.deposits.index')
+                ->with('error', 'Seuls les dépôts en attente peuvent être mis à jour.');
+        }
+
+        $validated = $request->validate([
+            'category_id' => 'required|exists:waste_categories,id',
+            'estimated_weight' => 'required|numeric|min:0.1',
+            'city' => 'required|string|max:255',
+            'address' => 'required|string|min:10',
         ]);
+
+        $deposit->update($validated);
+
+        return redirect()->route('citizen.deposits.index')
+            ->with('success', 'Dépôt mis à jour avec succès !');
+    }
+
+    // delete deposit 
+    public function destroy(Deposit $deposit, Request $request)
+    {
+
+        if ($deposit->citizen_id !== $request->user()->id) {
+            return back()->with('error', 'Action non autorisée');
+        }
+
+        if (strtolower($deposit->status) !== 'pending') {
+            return redirect()->route('citizen.deposits.index')
+                ->with('error', 'Seuls les dépôts en attente peuvent être supprimés.');
+        }
+
+        if ($deposit->photo_path) {
+            Storage::disk('public')->delete($deposit->photo_path);
+        }
+
+        $deposit->delete();
+
+
+        return redirect()->route('citizen.deposits.index')->with('success', 'Dépôt supprimé avec succès');
     }
 }
