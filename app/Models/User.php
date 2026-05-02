@@ -27,7 +27,9 @@ class User extends Authenticatable
         'role',
         'points',
         'is_verified',
-        'is_banned'
+        'is_banned',
+        'last_login_latitude',
+        'last_login_longitude',
     ];
 
     /**
