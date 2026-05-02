@@ -9,9 +9,13 @@ class VoucherRedemption extends Model
     protected $fillable = [
         'user_id',
         'voucher_id',
-        'point_spent',
+        'points_spent',
         'status',
         'redeemed_at'
+    ];
+
+    protected $casts = [
+        'redeemed_at' => 'datetime',
     ];
 
     public function user()

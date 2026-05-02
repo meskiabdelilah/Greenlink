@@ -11,19 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('point_transactions', function(Blueprint $table)
-        {
+        Schema::create('point_transactions', function (Blueprint $table) {
             $table->id();
+
             $table->foreignId('user_id')
                 ->constrained('users')
                 ->cascadeOnDelete();
+
             $table->foreignId('deposit_id')
-                ->nullable()
+                ->unique()
                 ->constrained('deposits')
-                ->nullOnDelete();
-            $table->text('description')->nullable();
-            $table->decimal('points',8,2);
-            $table->enum('type', ['earned', 'spent']);
+                ->cascadeOnDelete();
+
+            $table->decimal('points', 10, 2);
+
+            $table->string('type')->default('earn');
+
             $table->timestamps();
         });
     }

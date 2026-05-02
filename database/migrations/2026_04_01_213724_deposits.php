@@ -16,17 +16,24 @@ return new class extends Migration
             $table->foreignId('citizen_id')
                 ->constrained('users')
                 ->cascadeOnDelete();
+            $table->foreignId('agent_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->foreignId('category_id')
                 ->constrained('waste_categories')
                 ->cascadeOnDelete();
 
+            $table->text('address');
+            $table->string('city');
+            
             $table->decimal('estimated_weight', 10, 2)
                 ->nullable();
             $table->decimal('actual_weight', 10, 2)
                 ->nullable();
             $table->string('photo_path')
                 ->nullable();
-            $table->enum('status', ['pending', 'assigned', 'collected','validated']);
+            $table->enum('status', ['pending', 'assigned', 'collected', 'validated'])->default('pending');
 
 
             $table->timestamp('collected_at')
