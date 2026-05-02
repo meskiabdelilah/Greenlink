@@ -8,80 +8,67 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function index(Request $request)
+    // Show list page
+    public function index()
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         $categories = WasteCategory::latest()->get();
 
-        return response()->json([
-            'message' => 'Categories fetched successfully',
-            'data' => $categories,
-        ]);
+        return view('admin.categories.index', compact('categories'));
     }
 
+    // Show create form
+    public function create()
+    {
+        return view('admin.categories.create');
+    }
+
+    // Store new category
     public function store(Request $request)
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         $fields = $request->validate([
             'name' => 'required|string|max:255|unique:waste_categories,name',
             'description' => 'nullable|string',
-            'points_per_kg' => 'nullable|numeric|min:0',
+            'points_per_kg' => 'required|numeric|min:0',
             'co2_saved_per_kg' => 'required|numeric|min:0',
         ]);
 
-        $category = WasteCategory::create($fields);
+        WasteCategory::create($fields);
 
-        return response()->json([
-            'message' => 'Category created successfully',
-            'data' => $category,
-        ], 201);
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', 'Catégorie créée avec succès');
     }
 
-    public function update(WasteCategory $wasteCategory, Request $request)
+    // Show edit form
+    public function edit(WasteCategory $wasteCategory)
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
+        return view('admin.categories.edit', compact('wasteCategory'));
+    }
 
+    // Update category
+    public function update(Request $request, WasteCategory $wasteCategory)
+    {
         $fields = $request->validate([
             'name' => 'required|string|max:255|unique:waste_categories,name,' . $wasteCategory->id,
             'description' => 'nullable|string',
-            'points_per_kg' => 'nullable|numeric|min:0',
-            'co2_saved_par_kg' => 'required|numeric|min:0',
+            'points_per_kg' => 'required|numeric|min:0',
+            'co2_saved_per_kg' => 'required|numeric|min:0',
         ]);
 
         $wasteCategory->update($fields);
 
-        return response()->json([
-            'message' => 'Category updated successfully',
-            'data' => $wasteCategory,
-        ]);
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', 'Catégorie mise à jour avec succès');
     }
 
-    public function destroy(WasteCategory $wasteCategory, Request $request)
+    // Delete category
+    public function destroy(WasteCategory $wasteCategory)
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         $wasteCategory->delete();
 
-        return response()->json([
-            'message' => 'Category deleted successfully'
-        ]);
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', 'Catégorie supprimée avec succès');
     }
 }
